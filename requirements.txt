@@ -1,0 +1,9 @@
+torch
+torchvision
+numpy
+pillow
+opencv-python
+streamlit
+streamlit-webrtc
+pathlib
+retina-face
