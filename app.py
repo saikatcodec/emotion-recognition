@@ -1,16 +1,17 @@
 import sys
 import logging
-from pathlib import Path
-from src.utils.logging_config import configure_logging
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent))
+
+from src.utils.logging_config import configure_logging
+configure_logging()
 
 from src.utils.process_frame import process_real_time, process_video
 
-sys.path.append(str(Path(__file__).parent))
 
 # Basic logging configuration: file + console (in separate module)
-configure_logging()
 logger = logging.getLogger(__name__)
 
 st.title("Face Emotion Recognition")
@@ -26,7 +27,7 @@ if real_time:
     )
 else:
     # video_path = st.text_input("Video path", placeholder="path/to/video.mp4")
-    uploaded_file = st.file_uploader("Video file", type=["mp4", "avi", "mov"])
+    uploaded_file = st.file_uploader("Video file", type=["mp4", "avi", "mov", "mkv"])
 
     if st.button("Infer") and uploaded_file:
         video_path = "/tmp/input.mp4"
@@ -35,7 +36,20 @@ else:
         with open(video_path, "wb") as f:
             f.write(video_bytes)
 
-        with st.spinner("Processing the video...", show_time=True):
-            output_path = process_video(video_path=video_path)
+        st.write("### Processing Video")
+        # Create a placeholder for video frames
+        video_placeholder = st.empty()
 
-        st.video(output_path)
+        with st.spinner("Processing the video...", show_time=True):
+            output_path = process_video(video_path=video_path, placeholder=video_placeholder)
+
+        if output_path:
+            st.success("Video processing completed!")
+            # Provide download button
+            with open(output_path, "rb") as file:
+                st.download_button(
+                    label="Download Processed Video",
+                    data=file,
+                    file_name="emotion_detected.mp4",
+                    mime="video/mp4"
+                )

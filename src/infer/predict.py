@@ -3,16 +3,17 @@ import torch.nn.functional as F
 from torchvision import transforms as T
 from torchvision.models.resnet import ResNet18_Weights
 from src.infer.emotion_classifier import ResNet
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Prediction:
     def __init__(self, model_path):
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model_path = model_path
 
         ## Load saved model informations
-        checkpoint = torch.load(self.model_path, map_location=self.device)
+        checkpoint = torch.load(self.model_path, map_location=self.device, weights_only=False)
         self.classes = checkpoint["classes"]
         model_dict = checkpoint["model_state_dict"]
 

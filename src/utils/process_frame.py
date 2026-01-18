@@ -2,7 +2,6 @@ import av
 import cv2
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
 from retinaface import RetinaFace
 from src.infer.predict import Prediction
 import logging
@@ -19,15 +18,16 @@ def process_real_time(frame: av.VideoFrame):
     return frame
 
 
-def process_video(video_path):
+def process_video(video_path, placeholder=None):
     video_file = cv2.VideoCapture(video_path)
     if video_file.isOpened():
         logger.info(f"Video opened for {video_path}")
     else:
         logger.error(f"Video is not opened for {video_path}")
+        return None
 
     video_fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    outputs_path = "/tmp/modified.mp4"
+    outputs_path = "output/modified.mp4"
     outputs = cv2.VideoWriter(
         outputs_path, fourcc=int(video_fourcc), fps=20, frameSize=(640, 480)
     )
@@ -67,16 +67,20 @@ def process_video(video_path):
                 cv2.putText(
                     frame,
                     f"{name}: {value:.3f}",
-                    (xmin, ymax + (i + 2) * 10),
+                    (xmin, ymax + (i + 2) * 25),
                     cv2.FONT_HERSHEY_PLAIN,
-                    0.8,
+                    2,
                     (200, 12, 0),
-                    1,
+                    2,
                     cv2.LINE_AA,
                 )
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        outputs.write(frame)
+        # Display frame in real-time if placeholder is provided
+        if placeholder is not None:
+            placeholder.image(frame, channels="RGB", width='stretch')
+
+        frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        outputs.write(frame_bgr)
         logger.info(f"{no_frame} no of frame saved successfully")
 
     outputs.release()

@@ -3,7 +3,7 @@ import logging
 __all__ = ["configure_logging"]
 
 
-def configure_logging(level=None, logfile="log-file.log"):
+def configure_logging(level=None, logfile="output/log-file.log"):
     root = logging.getLogger()
     if root.handlers:
         return
