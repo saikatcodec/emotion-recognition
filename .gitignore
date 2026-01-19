@@ -42,3 +42,5 @@ logs/
 
 outputs/
 node_modules/
+
+datasets/

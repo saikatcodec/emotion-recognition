@@ -8,14 +8,45 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-model_path = "src/models/emotion-detect.pth"
+model_path = "src/models/emotion_detect_v2.0.pth"
 emotion_model = Prediction(model_path=model_path)
 
 
 def process_real_time(frame: av.VideoFrame):
-    logger.info("Process real-time frame")
+    image = frame.to_ndarray(format='rgb24')
 
-    return frame
+    image = cv2.resize(image, (640, 480))
+
+    # Detect face 
+    faces = RetinaFace.detect_faces(image, threshold=0.7)
+    if not faces:
+        logger.warning('Face is not detected')
+        faces = {}
+    
+    # Detect emotion
+    for _key, value in faces.items():
+        xmin, ymin, xmax, ymax = value["facial_area"]
+
+        copy_image = image.copy()
+        cropped_image = copy_image[ymin:ymax, xmin:xmax]
+
+        emotion_res = emotion_model.inference_emotion(cropped_image)
+
+        cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
+
+        for i, (name, value) in enumerate(emotion_res.items()):
+            cv2.putText(
+                image,
+                f"{name}: {value:.3f}",
+                (xmin, ymax + (i + 2) * 25),
+                cv2.FONT_HERSHEY_PLAIN,
+                2,
+                (200, 12, 0),
+                2,
+                cv2.LINE_AA,
+            )
+
+    return av.VideoFrame.from_ndarray(image, format='rgb24')
 
 
 def process_video(video_path, placeholder=None):
@@ -44,11 +75,9 @@ def process_video(video_path, placeholder=None):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         no_frame += 1
-        faces = RetinaFace.detect_faces(frame, 0.5)
+        faces = RetinaFace.detect_faces(frame, 0.7)
 
-        if faces:
-            logger.info(f"{no_frame} no of frame has {len(faces)} faces")
-        else:
+        if not faces:
             logger.warning(f"{no_frame} no of frame has no face")
             faces = {}
 
@@ -59,7 +88,6 @@ def process_video(video_path, placeholder=None):
             cropped_image = copy_image[ymin:ymax, xmin:xmax]
 
             emotion_res = emotion_model.inference_emotion(cropped_image)
-            logger.info(f"The face has {emotion_res}")
 
             cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
 
@@ -81,7 +109,6 @@ def process_video(video_path, placeholder=None):
 
         frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         outputs.write(frame_bgr)
-        logger.info(f"{no_frame} no of frame saved successfully")
 
     outputs.release()
     video_file.release()
