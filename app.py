@@ -27,8 +27,12 @@ if real_time:
     st.write("Real-time process")
     webrtc_streamer(
         key="emotion-detect-camera-access",
-        sendback_audio=False,
         video_frame_callback=process_real_time,
+        media_stream_constraints={
+            "video": {"width": 480, "height": 360},
+            "audio": False
+        },
+        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
     )
 # Video processed with file uploader
 else:

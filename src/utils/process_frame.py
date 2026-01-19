@@ -1,6 +1,5 @@
 import av
 import cv2
-import os
 
 from retinaface import RetinaFace
 from src.infer.predict import Prediction
@@ -11,42 +10,43 @@ logger = logging.getLogger(__name__)
 model_path = "src/models/emotion_detect_v2.0.pth"
 emotion_model = Prediction(model_path=model_path)
 
+# Frame skipping counter for real-time processing
+frame_counter = 0
 
 def process_real_time(frame: av.VideoFrame):
-    image = frame.to_ndarray(format='rgb24')
+    global frame_counter
+    frame_counter += 1
 
-    image = cv2.resize(image, (640, 480))
+    image = frame.to_ndarray(format="rgb24")
+    image = cv2.resize(image, (480, 360))
 
-    # Detect face 
-    faces = RetinaFace.detect_faces(image, threshold=0.7)
-    if not faces:
-        logger.warning('Face is not detected')
-        faces = {}
-    
-    # Detect emotion
-    for _key, value in faces.items():
-        xmin, ymin, xmax, ymax = value["facial_area"]
+    if frame_counter % 3 == 0:
+        faces = RetinaFace.detect_faces(image, threshold=0.7) or {}
+        for _, value in faces.items():
+            xmin, ymin, xmax, ymax = value["facial_area"]
 
-        copy_image = image.copy()
-        cropped_image = copy_image[ymin:ymax, xmin:xmax]
+            cropped = image[ymin:ymax, xmin:xmax]
+            emotion_res = emotion_model.inference_emotion(cropped)
 
-        emotion_res = emotion_model.inference_emotion(cropped_image)
+            cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
 
-        cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
+            for i, (name, value) in enumerate(emotion_res.items()):
+                cv2.putText(
+                    image,
+                    f"{name}: {value:.2f}",
+                    (xmin, ymax + (i + 1) * 18),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    1,
+                    cv2.LINE_AA,
+                )
 
-        for i, (name, value) in enumerate(emotion_res.items()):
-            cv2.putText(
-                image,
-                f"{name}: {value:.3f}",
-                (xmin, ymax + (i + 2) * 25),
-                cv2.FONT_HERSHEY_PLAIN,
-                2,
-                (200, 12, 0),
-                2,
-                cv2.LINE_AA,
-            )
+    out = av.VideoFrame.from_ndarray(image, format="rgb24")
+    out.pts = frame.pts
+    out.time_base = frame.time_base
+    return out
 
-    return av.VideoFrame.from_ndarray(image, format='rgb24')
 
 
 def process_video(video_path, placeholder=None):
