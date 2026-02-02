@@ -8,7 +8,7 @@ kwargs = {
     "format": "[ %(asctime)s ] - %(name)s - %(levelname)s - %(message)s",
     "datefmt": "%Y-%m-%d %I:%M:%S %p",
     "level": logging.INFO,
-    "filename": logfile
+    # "filename": logfile
 }
 
 logging.basicConfig(**kwargs)
