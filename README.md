@@ -2,6 +2,8 @@
 
 A real-time face emotion recognition system that detects faces and classifies emotions using deep learning. Built with PyTorch, RetinaFace for face detection, and Streamlit for the web interface.
 
+[Live Link](https://emotion-recognition-photo.streamlit.app/)
+
 ## Features
 
 - **Real-time emotion detection** via webcam using WebRTC
