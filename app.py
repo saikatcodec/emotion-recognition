@@ -1,6 +1,5 @@
 import sys
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 

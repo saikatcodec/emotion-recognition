@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torchvision import transforms as T
 from torchvision.models.resnet import ResNet18_Weights
 
-from src.infer.emotion_classifier import ResNet
+from src.infer.emotion_classifier_v3_0 import ResNet
 from src.utils.logging_config import logging
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ from src.utils.logging_config import logging
 
 logger = logging.getLogger(__name__)
 
-model_path = "src/models/emotion_detect_v2.0.pth"
+model_path = "src/models/emotion_detect_v3.0.pth"
 emotion_model = Prediction(model_path=model_path)
 
 def convert_to_opencv(picture):

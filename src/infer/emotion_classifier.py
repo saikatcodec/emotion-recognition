@@ -1,5 +1,5 @@
 from torch import nn
-from torchvision.models.resnet import resnet18, ResNet18_Weights
+from torchvision.models.resnet import resnet50, ResNet50_Weights
 
 from src.utils.logging_config import logging
 
@@ -11,8 +11,8 @@ class ResNet(nn.Module):
         super().__init__()
 
         ## Load the pretrained model
-        logger.info("Loaded the resnet18 pretrained model")
-        self.model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+        logger.info("Loaded the resnet50 pretrained model")
+        self.model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
 
         ## Modify the classification layer
         in_features = self.model.fc.in_features
