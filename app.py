@@ -5,7 +5,12 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 from src.utils.logging_config import logging
-from src.utils.process_frame import process_real_time, process_video
+from src.utils.process_frame import (
+    process_video,
+    convert_to_opencv,
+    from_photos,
+    save_to_path
+)
 
 
 # Basic logging configuration: file + console (in separate module)
@@ -19,17 +24,19 @@ video_title = st.empty()
 video_placeholder = st.empty()
 
 # Real-time video process with camera
-real_time = st.checkbox("Real-time process(Camera)")
+real_time = st.checkbox("Real-time process(Camera) From photo")
 if real_time:
     st.write("Real-time process")
-    webrtc_streamer(
-        key="emotion-detect-camera-access",
-        video_frame_callback=process_real_time,
-        media_stream_constraints={
-            "video": {"width": 480, "height": 360},
-            "audio": False
-        },
-    )
+    picture = st.camera_input(label='Take a Photo', disabled=(not real_time))
+
+    if picture is not None:
+        # To read image file buffer with OpenCV:
+        cv_img = convert_to_opencv(picture)
+        processed = from_photos(cv_img)
+        file_path = save_to_path(processed)
+
+        st.image(file_path)
+
 # Video processed with file uploader
 else:
     uploaded_file = st.file_uploader("Video file", type=["mp4", "avi", "mov", "mkv"])

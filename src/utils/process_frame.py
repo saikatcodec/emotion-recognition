@@ -1,5 +1,6 @@
-import av
 import cv2
+import os
+import numpy as np
 
 from retinaface import RetinaFace
 from src.infer.predict import Prediction
@@ -10,43 +11,57 @@ logger = logging.getLogger(__name__)
 model_path = "src/models/emotion_detect_v2.0.pth"
 emotion_model = Prediction(model_path=model_path)
 
-# Frame skipping counter for real-time processing
-frame_counter = 0
+def convert_to_opencv(picture):
+    '''
+    Used to convert image file buffer to open-cv image
+    
+    :param picture: image file buffer
+    :return: open-cv image
+    '''
+    bytes_data = picture.getvalue()
+    cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+    logger.info('Image are converted into open-cv')
 
-def process_real_time(frame: av.VideoFrame):
-    global frame_counter
-    frame_counter += 1
+    return cv2_img
 
-    image = frame.to_ndarray(format="rgb24")
-    image = cv2.resize(image, (480, 360))
+def save_to_path(cv_img):
+    file_path = 'outputs/camera-photo.jpg'
+    cv2.imwrite(file_path, cv_img)
 
-    if frame_counter % 3 == 0:
-        faces = RetinaFace.detect_faces(image, threshold=0.7) or {}
-        for _, value in faces.items():
-            xmin, ymin, xmax, ymax = value["facial_area"]
+    return file_path
 
-            cropped = image[ymin:ymax, xmin:xmax]
-            emotion_res = emotion_model.inference_emotion(cropped)
 
-            cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
+def from_photos(cv_img):
+    faces = RetinaFace.detect_faces(cv_img, 0.7)
 
-            for i, (name, value) in enumerate(emotion_res.items()):
-                cv2.putText(
-                    image,
-                    f"{name}: {value:.2f}",
-                    (xmin, ymax + (i + 1) * 18),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    1,
-                    cv2.LINE_AA,
-                )
+    if not faces:
+        logger.warning(f"The photo has no face")
+        faces = {}
 
-    out = av.VideoFrame.from_ndarray(image, format="rgb24")
-    out.pts = frame.pts
-    out.time_base = frame.time_base
-    return out
+    for _key, value in faces.items():
+        xmin, ymin, xmax, ymax = value["facial_area"]
 
+        copy_image = cv_img.copy()
+        cropped_image = copy_image[ymin:ymax, xmin:xmax]
+
+        cropped_image = cv2.resize(cropped_image, (256, 256))
+        emotion_res = emotion_model.inference_emotion(cropped_image)
+
+        cv2.rectangle(cv_img, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
+
+        for i, (name, value) in enumerate(emotion_res.items()):
+            cv2.putText(
+                cv_img,
+                f"{name}: {value:.3f}",
+                (xmin, ymax + (i + 2) * 25),
+                cv2.FONT_HERSHEY_PLAIN,
+                2,
+                (200, 12, 0),
+                2,
+                cv2.LINE_AA,
+            )
+
+    return cv_img
 
 
 def process_video(video_path, placeholder=None):
@@ -64,7 +79,8 @@ def process_video(video_path, placeholder=None):
 
     # Create output video
     video_fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    outputs_path = "output/modified.mp4"
+    outputs_path = "outputs/modified.mp4"
+    os.makedirs(os.path.dirname(outputs_path), exist_ok=True)
     outputs_h = 480
     outputs = cv2.VideoWriter(
         outputs_path, fourcc=int(video_fourcc), fps=20, frameSize=(int(aspect_ratio * outputs_h), outputs_h)
@@ -88,34 +104,7 @@ def process_video(video_path, placeholder=None):
         frame = cv2.resize(frame, (int(aspect_ratio * outputs_h), outputs_h))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        faces = RetinaFace.detect_faces(frame, 0.7)
-
-        if not faces:
-            logger.warning(f"{no_frame} no of frame has no face")
-            faces = {}
-
-        for _key, value in faces.items():
-            xmin, ymin, xmax, ymax = value["facial_area"]
-
-            copy_image = frame.copy()
-            cropped_image = copy_image[ymin:ymax, xmin:xmax]
-
-            cropped_image = cv2.resize(cropped_image, (224, 224))
-            emotion_res = emotion_model.inference_emotion(cropped_image)
-
-            cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
-
-            for i, (name, value) in enumerate(emotion_res.items()):
-                cv2.putText(
-                    frame,
-                    f"{name}: {value:.3f}",
-                    (xmin, ymax + (i + 2) * 25),
-                    cv2.FONT_HERSHEY_PLAIN,
-                    2,
-                    (200, 12, 0),
-                    2,
-                    cv2.LINE_AA,
-                )
+        frame = from_photos(frame)
 
         # Display frame in real-time if placeholder is provided
         if placeholder is not None:
