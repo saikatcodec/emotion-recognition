@@ -27,12 +27,15 @@ def convert_to_opencv(picture):
 def save_to_path(cv_img):
     file_path = 'outputs/camera-photo.jpg'
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    cv_img = cv2.cvtColor(cv_img, cv2.COLOR_RGB2BGR)
     cv2.imwrite(file_path, cv_img)
 
     return file_path
 
 
 def from_photos(cv_img):
+    cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+
     faces = RetinaFace.detect_faces(cv_img, 0.7)
 
     if not faces:
@@ -54,7 +57,7 @@ def from_photos(cv_img):
             cv2.putText(
                 cv_img,
                 f"{name}: {value:.3f}",
-                (xmin, ymax + (i + 2) * 25),
+                (xmin - 10, ymax + (i + 2) * 25),
                 cv2.FONT_HERSHEY_PLAIN,
                 2,
                 (200, 12, 0),
@@ -103,7 +106,6 @@ def process_video(video_path, placeholder=None):
             break
 
         frame = cv2.resize(frame, (int(aspect_ratio * outputs_h), outputs_h))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         frame = from_photos(frame)
 
