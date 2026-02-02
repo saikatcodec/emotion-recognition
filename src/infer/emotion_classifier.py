@@ -1,6 +1,7 @@
 from torch import nn
-import logging
 from torchvision.models.resnet import resnet18, ResNet18_Weights
+
+from src.utils.logging_config import logging
 
 logger = logging.getLogger(__name__)
 

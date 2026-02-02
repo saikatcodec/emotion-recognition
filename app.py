@@ -1,13 +1,10 @@
 import sys
-import logging
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
-from src.utils.logging_config import configure_logging
-configure_logging()
-
+from src.utils.logging_config import logging
 from src.utils.process_frame import process_real_time, process_video
 
 

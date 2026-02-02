@@ -3,7 +3,7 @@ import cv2
 
 from retinaface import RetinaFace
 from src.infer.predict import Prediction
-import logging
+from src.utils.logging_config import logging
 
 logger = logging.getLogger(__name__)
 
@@ -57,24 +57,37 @@ def process_video(video_path, placeholder=None):
         logger.error(f"Video is not opened for {video_path}")
         return None
 
+    # Calculate aspect ratio
+    video_w = video_file.get(cv2.CAP_PROP_FRAME_WIDTH)
+    video_h = video_file.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    aspect_ratio = video_w * 1.0 / video_h
+
+    # Create output video
     video_fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     outputs_path = "output/modified.mp4"
+    outputs_h = 480
     outputs = cv2.VideoWriter(
-        outputs_path, fourcc=int(video_fourcc), fps=20, frameSize=(640, 480)
+        outputs_path, fourcc=int(video_fourcc), fps=20, frameSize=(int(aspect_ratio * outputs_h), outputs_h)
     )
     logger.warning('Modified video file is created with name of "/modified.mp4"')
 
     no_frame = 0
-    while True:
-        ret, frame = video_file.read()
-
+    while video_file.isOpened():
+        ret = video_file.grab()
         if not ret:
             break
 
-        frame = cv2.resize(frame, (640, 480))
+        no_frame += 1
+        if no_frame % 5 != 0:
+            continue
+
+        ret, frame = video_file.retrieve()
+        if not ret:
+            break
+
+        frame = cv2.resize(frame, (int(aspect_ratio * outputs_h), outputs_h))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        no_frame += 1
         faces = RetinaFace.detect_faces(frame, 0.7)
 
         if not faces:
@@ -87,6 +100,7 @@ def process_video(video_path, placeholder=None):
             copy_image = frame.copy()
             cropped_image = copy_image[ymin:ymax, xmin:xmax]
 
+            cropped_image = cv2.resize(cropped_image, (224, 224))
             emotion_res = emotion_model.inference_emotion(cropped_image)
 
             cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
@@ -105,7 +119,7 @@ def process_video(video_path, placeholder=None):
 
         # Display frame in real-time if placeholder is provided
         if placeholder is not None:
-            placeholder.image(frame, channels="RGB", width='stretch')
+            placeholder.image(frame, channels="RGB")
 
         frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         outputs.write(frame_bgr)
