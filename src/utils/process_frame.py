@@ -26,6 +26,7 @@ def convert_to_opencv(picture):
 
 def save_to_path(cv_img):
     file_path = 'outputs/camera-photo.jpg'
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
     cv2.imwrite(file_path, cv_img)
 
     return file_path
