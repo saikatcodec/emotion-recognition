@@ -35,7 +35,10 @@ if real_time:
         file_path = save_to_path(processed)
 
         if results:
-            st.code(results, language="python")
+            texts = '''Results\n'''
+            for name, res in results.items():
+                texts += f'{name}: {res * 100:.2f}% \n'
+            st.code(texts, language="python")
         else:
             st.text('No face found')
         st.image(file_path)
