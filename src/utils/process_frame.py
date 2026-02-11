@@ -42,6 +42,7 @@ def from_photos(cv_img):
         logger.warning(f"The photo has no face")
         faces = {}
 
+    emotion_res: dict = {}
     for _key, value in faces.items():
         xmin, ymin, xmax, ymax = value["facial_area"]
 
@@ -49,7 +50,7 @@ def from_photos(cv_img):
         cropped_image = copy_image[ymin:ymax, xmin:xmax]
 
         cropped_image = cv2.resize(cropped_image, (256, 256))
-        emotion_res: dict = emotion_model.inference_emotion(cropped_image)
+        emotion_res = emotion_model.inference_emotion(cropped_image)
 
         cv2.rectangle(cv_img, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
 

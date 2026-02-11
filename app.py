@@ -34,9 +34,11 @@ if real_time:
         processed, results = from_photos(cv_img)
         file_path = save_to_path(processed)
 
-        st.code(results, language="python")
+        if results:
+            st.code(results, language="python")
+        else:
+            st.text('No face found')
         st.image(file_path)
-
 # Video processed with file uploader
 else:
     uploaded_file = st.file_uploader("Video file", type=["mp4", "avi", "mov", "mkv"])
