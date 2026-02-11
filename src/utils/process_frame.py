@@ -49,7 +49,7 @@ def from_photos(cv_img):
         cropped_image = copy_image[ymin:ymax, xmin:xmax]
 
         cropped_image = cv2.resize(cropped_image, (256, 256))
-        emotion_res = emotion_model.inference_emotion(cropped_image)
+        emotion_res: dict = emotion_model.inference_emotion(cropped_image)
 
         cv2.rectangle(cv_img, (xmin, ymin), (xmax, ymax), (200, 12, 0), 2)
 
@@ -65,7 +65,7 @@ def from_photos(cv_img):
                 cv2.LINE_AA,
             )
 
-    return cv_img
+    return cv_img, emotion_res
 
 
 def process_video(video_path, placeholder=None):
@@ -107,7 +107,7 @@ def process_video(video_path, placeholder=None):
 
         frame = cv2.resize(frame, (int(aspect_ratio * outputs_h), outputs_h))
 
-        frame = from_photos(frame)
+        frame, _ = from_photos(frame)
 
         # Display frame in real-time if placeholder is provided
         if placeholder is not None:

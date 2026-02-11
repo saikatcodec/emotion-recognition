@@ -31,9 +31,10 @@ if real_time:
     if picture is not None:
         # To read image file buffer with OpenCV:
         cv_img = convert_to_opencv(picture)
-        processed = from_photos(cv_img)
+        processed, results = from_photos(cv_img)
         file_path = save_to_path(processed)
 
+        st.code(results, language="python")
         st.image(file_path)
 
 # Video processed with file uploader
